@@ -8,7 +8,10 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState('');
   const messagesEndRef = useRef(null);
+  const wsRef = useRef(null);
+  const [useWebSocket, setUseWebSocket] = useState(false); // Toggle for WS streaming
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -16,7 +19,7 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, streamingMessage]);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -58,27 +61,66 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
       }
     };
     loadHistory();
+
+    // Cleanup WebSocket on unmount
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
   }, []);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  // WebSocket setup (for future streaming implementation)
+  const setupWebSocket = (userId) => {
+    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws';
+    wsRef.current = new WebSocket(`${wsUrl}/${userId}`);
 
-    const userId = localStorage.getItem('userId');
-    const userMessage = {
-      id: Date.now(),
-      sender: 'user',
-      text: inputMessage,
-      timestamp: new Date().toISOString(),
+    wsRef.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.type === 'start') {
+        setIsTyping(true);
+        setStreamingMessage('');
+      } else if (data.type === 'chunk') {
+        setStreamingMessage(prev => prev + data.content);
+      } else if (data.type === 'done') {
+        // Add complete message to history
+        const bearResponse = {
+          id: Date.now(),
+          sender: 'bear',
+          text: streamingMessage,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, bearResponse]);
+        setIsTyping(false);
+        setStreamingMessage('');
+      } else if (data.type === 'error') {
+        console.error('WebSocket error:', data.message);
+        const errorMessage = {
+          id: Date.now(),
+          sender: 'bear',
+          text: 'Sorry, I had trouble processing that. Please try again.',
+          timestamp: new Date().toISOString(),
+        };
+        setMessages(prev => [...prev, errorMessage]);
+        setIsTyping(false);
+        setStreamingMessage('');
+      }
     };
 
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
-    setInputMessage('');
-    setIsTyping(true);
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setUseWebSocket(false); // Fallback to HTTP
+    };
 
+    wsRef.current.onclose = () => {
+      console.log('WebSocket closed');
+    };
+  };
+
+  const handleSendMessageHTTP = async (userId, message, newMessages) => {
     try {
-      // Backend expects: { user_id: string, message: string }
-      const response = await chatAPI.send(userId, inputMessage);
+      const response = await chatAPI.send(userId, message);
       
       const bearResponse = {
         id: response.data.message_id,
@@ -92,7 +134,6 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
       updateChatHistory(updatedMessages);
     } catch (error) {
       console.error('Failed to send message:', error);
-      // Optional: Add error message to chat
       const errorMessage = {
         id: Date.now() + 1,
         sender: 'bear',
@@ -103,6 +144,57 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
       setMessages(updatedMessages);
     } finally {
       setIsTyping(false);
+      setStreamingMessage('');
+    }
+  };
+
+  const handleSendMessageWS = (message) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        message: message,
+        model: "anthropic/claude-sonnet-4-5-20250929"
+      }));
+    } else {
+      console.error('WebSocket not connected, falling back to HTTP');
+      setUseWebSocket(false);
+      const userId = localStorage.getItem('userId');
+      const newMessages = [...messages, {
+        id: Date.now(),
+        sender: 'user',
+        text: message,
+        timestamp: new Date().toISOString(),
+      }];
+      setMessages(newMessages);
+      handleSendMessageHTTP(userId, message, newMessages);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    const userId = localStorage.getItem('userId');
+    const userMessage = {
+      id: Date.now(),
+      sender: 'user',
+      text: inputMessage,
+      timestamp: new Date().toISOString(),
+    };
+
+    const messageText = inputMessage;
+    setInputMessage('');
+    setIsTyping(true);
+    setStreamingMessage('');
+
+    if (useWebSocket) {
+      // WebSocket streaming (future implementation)
+      const newMessages = [...messages, userMessage];
+      setMessages(newMessages);
+      handleSendMessageWS(messageText);
+    } else {
+      // Standard HTTP request (current implementation)
+      const newMessages = [...messages, userMessage];
+      setMessages(newMessages);
+      await handleSendMessageHTTP(userId, messageText, newMessages);
     }
   };
 
@@ -172,7 +264,7 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
                     : 'bg-white border-2 border-charcoal/10 text-charcoal rounded-bl-sm shadow-sm'
                 }`}
               >
-                <p className="leading-relaxed">{message.text}</p>
+                <p className="leading-relaxed whitespace-pre-wrap">{message.text}</p>
                 <p className={`text-xs mt-2 ${message.sender === 'user' ? 'text-white/70' : 'text-charcoal/50'}`}>
                   {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -180,17 +272,22 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
             </div>
           ))}
 
+          {/* Show streaming message while typing */}
           {isTyping && (
             <div className="flex justify-start items-end gap-3">
               <div className="flex-shrink-0 mb-1">
                 <img src={bearIcon} alt="Care Bear" className="w-10 h-10 rounded-full" />
               </div>
-              <div className="bg-white border-2 border-charcoal/10 rounded-2xl rounded-bl-sm px-6 py-4 shadow-sm">
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-brown rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-brown rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-brown rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                </div>
+              <div className="bg-white border-2 border-charcoal/10 rounded-2xl rounded-bl-sm px-6 py-4 shadow-sm min-w-[100px]">
+                {streamingMessage ? (
+                  <p className="leading-relaxed whitespace-pre-wrap">{streamingMessage}</p>
+                ) : (
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-brown rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-brown rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-brown rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -210,17 +307,18 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
             className="flex-1 px-4 py-3 border-2 border-charcoal/20 rounded-xl focus:border-brown focus:outline-none resize-none transition-colors"
             rows="1"
             style={{ minHeight: '48px', maxHeight: '120px' }}
+            disabled={isTyping}
           />
           <button
             onClick={handleSendMessage}
-            disabled={!inputMessage.trim()}
+            disabled={!inputMessage.trim() || isTyping}
             className={`px-6 py-3 rounded-xl font-medium transition-all ${
-              inputMessage.trim()
+              inputMessage.trim() && !isTyping
                 ? 'bg-brown text-white hover:bg-brown/90 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5'
                 : 'bg-charcoal/10 text-charcoal/40 cursor-not-allowed'
             }`}
           >
-            Send
+            {isTyping ? 'Sending...' : 'Send'}
           </button>
         </div>
       </div>
