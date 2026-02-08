@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import OnboardingFlow from './components/OnboardingFlow';
+import HomePage from './components/HomePage';
 import ChatHomepage from './components/ChatHomepage';
 import ProfilePage from './components/ProfilePage';
 import CalendarPage from './components/CalendarPage';
@@ -57,6 +58,18 @@ function App() {
           />
           <Route 
             path="/home" 
+            element={
+              isOnboarded ? (
+                <HomePage 
+                  userData={userData}
+                />
+              ) : (
+                <Navigate to="/onboarding" replace />
+              )
+            } 
+          />
+          <Route 
+            path="/chat" 
             element={
               isOnboarded ? (
                 <ChatHomepage 
