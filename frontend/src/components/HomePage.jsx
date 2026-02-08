@@ -353,9 +353,12 @@ const HomePage = ({ userData, medications, updateMedications }) => {
           <div className="bg-white rounded-2xl shadow-lg border-2 border-charcoal/10 p-6">
             <h2 className="text-lg font-bold mb-3">Symptom Tracker</h2>
             <SymptomInput onAdd={addSymptom} />
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-4 space-y-3">
               {symptoms.map(s => (
-                <li key={s.id} className="text-sm text-charcoal/70">{new Date(s.timestamp).toLocaleString()}: {s.text}</li>
+                <li key={s.id} className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-brown rounded-lg">
+                  <p className="font-medium text-charcoal">{s.text}</p>
+                  <p className="text-xs text-charcoal/60 mt-1">{new Date(s.timestamp).toLocaleString()}</p>
+                </li>
               ))}
             </ul>
           </div>
@@ -416,14 +419,14 @@ const HomePage = ({ userData, medications, updateMedications }) => {
               {followUps.length === 0 ? (
                 <p className="text-sm text-charcoal/50 text-center py-4">No appointments scheduled yet</p>
               ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {followUps.map(f => (
-                    <li key={f.id} className="flex items-center justify-between bg-charcoal/5 rounded-lg p-3 hover:bg-charcoal/10 transition-colors">
+                    <li key={f.id} className="flex items-center justify-between bg-gradient-to-r from-brown/10 to-brown/5 border-2 border-brown/30 rounded-xl p-4 hover:shadow-md transition-all">
                       <div>
-                        <p className="text-sm font-medium text-charcoal">{f.title}</p>
-                        <p className="text-xs text-charcoal/60">{new Date(f.when).toLocaleString()}</p>
+                        <p className="font-semibold text-charcoal text-base">{f.title}</p>
+                        <p className="text-sm text-charcoal/70 mt-1.5">{new Date(f.when).toLocaleString()}</p>
                       </div>
-                      <button onClick={() => setFollowUps(p => p.filter(x => x.id !== f.id))} className="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
+                      <button onClick={() => setFollowUps(p => p.filter(x => x.id !== f.id))} className="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors">Remove</button>
                     </li>
                   ))}
                 </ul>
