@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { userAPI, chatAPI } from '../services/api';
 
 const OnboardingFlow = ({ onComplete }) => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     personalInfo: {
       firstName: '',
@@ -57,12 +59,90 @@ const OnboardingFlow = ({ onComplete }) => {
     }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
+      await handleOnboardingComplete();
+    }
+  };
+
+  const handleOnboardingComplete = async () => {
+    try {
+      setError('');
+      
+      // 1. Generate a unique ID
+      const userId = `user_${Date.now()}`;
+      
+      // 2. Map frontend structure to backend expected structure
+      const userData = {
+        user_id: userId,
+        personal_info: {
+          first_name: formData.personalInfo.firstName,
+          last_name: formData.personalInfo.lastName,
+          date_of_birth: formData.personalInfo.dateOfBirth,
+          gender: formData.personalInfo.gender,
+          email: formData.personalInfo.email,
+          phone: formData.personalInfo.phone,
+        },
+        medical_history: {
+          allergies: formData.medicalHistory.allergies,
+          chronic_conditions: formData.medicalHistory.chronicConditions,
+          past_surgeries: formData.medicalHistory.pastSurgeries,
+          current_medications: formData.medicalHistory.currentMedications,
+        },
+        health_status: {
+          current_conditions: formData.healthStatus.currentConditions,
+          symptoms: formData.healthStatus.symptoms,
+          is_pregnant: formData.healthStatus.isPregnant,
+          due_date: formData.healthStatus.dueDate,
+        },
+        family_history: {
+          heart_disease: formData.familyHistory.heartDisease,
+          diabetes: formData.familyHistory.diabetes,
+          cancer: formData.familyHistory.cancer,
+          mental_health: formData.familyHistory.mentalHealth,
+          other: formData.familyHistory.other,
+        },
+        emergency_contact: {
+          name: formData.emergencyContact.name,
+          relationship: formData.emergencyContact.relationship,
+          phone: formData.emergencyContact.phone,
+        },
+      };
+      
+      // 3. Create user in backend
+      await userAPI.create(userData);
+      
+      // 4. Store ID for session management
+      localStorage.setItem('userId', userId);
+      
+      // 5. Initialize chat context for this user
+      await chatAPI.initialize(userId);
+      
+      // 6. Update parent component and navigate
       onComplete(formData);
       navigate('/home');
+      
+    } catch (error) {
+      console.error('Onboarding failed:', error);
+      // Normalize various possible error shapes from the backend (string, array of issues, or object)
+      const detail = error?.response?.data?.detail ?? error?.response?.data ?? error?.message;
+      let message = 'Failed to create profile. Please try again.';
+
+      if (typeof detail === 'string') {
+        message = detail;
+      } else if (Array.isArray(detail)) {
+        // Some backends (e.g. pydantic/zod) return an array of issue objects
+        message = detail
+          .map((d) => (typeof d === 'string' ? d : d.msg || d.message || JSON.stringify(d)))
+          .join('; ');
+      } else if (detail && typeof detail === 'object') {
+        // Fallback for objects: try common properties or stringify
+        message = detail.detail || detail.message || JSON.stringify(detail);
+      }
+
+      setError(message);
     }
   };
 
@@ -450,6 +530,13 @@ const OnboardingFlow = ({ onComplete }) => {
             Let's get to know you better so I can take care of you
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-100 border-2 border-red-400 text-red-700 rounded-xl">
+            {error}
+          </div>
+        )}
 
         {/* Progress Bar */}
         <div className="mb-8">

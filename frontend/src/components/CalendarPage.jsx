@@ -1,35 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { medicationAPI, calendarAPI } from '../services/api';
 
 const CalendarPage = ({ userData }) => {
   const navigate = useNavigate();
+  const userId = localStorage.getItem('userId');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [medications, setMedications] = useState([
-    {
-      id: 1,
-      name: 'Morning Vitamins',
-      dosage: '1 tablet',
-      time: '08:00',
-      frequency: 'Daily',
-      taken: {},
-    },
-    {
-      id: 2,
-      name: 'Blood Pressure Medication',
-      dosage: '10mg',
-      time: '09:00',
-      frequency: 'Daily',
-      taken: {},
-    },
-    {
-      id: 3,
-      name: 'Allergy Medication',
-      dosage: '5mg',
-      time: '20:00',
-      frequency: 'As needed',
-      taken: {},
-    },
-  ]);
+  const [medications, setMedications] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newMedication, setNewMedication] = useState({
     name: '',
@@ -37,6 +14,53 @@ const CalendarPage = ({ userData }) => {
     time: '',
     frequency: 'Daily',
   });
+
+  useEffect(() => {
+    if (userId) {
+      loadData();
+    }
+  }, [userId, currentDate]);
+
+  const loadData = async () => {
+    try {
+      // Fetch medications and calendar view in parallel
+      const [medsResponse, viewResponse] = await Promise.all([
+        medicationAPI.getAll(userId, true),
+        calendarAPI.getView(userId, currentDate.getMonth() + 1, currentDate.getFullYear())
+      ]);
+
+      // Map backend medication data to frontend structure
+      const loadedMeds = medsResponse.data.map(med => ({
+        id: med.medication_id,
+        name: med.name,
+        dosage: med.dosage,
+        time: med.time,
+        frequency: med.frequency,
+        taken: {} // Will be populated from viewResponse
+      }));
+
+      // Populate taken status from calendar view
+      if (viewResponse.data && viewResponse.data.days) {
+        viewResponse.data.days.forEach(dayData => {
+          const day = new Date(dayData.date).getDate();
+          
+          // medications_taken is an array of medication_ids that were taken on this date
+          if (dayData.medications_taken && dayData.medications_taken.length > 0) {
+            dayData.medications_taken.forEach(medId => {
+              const med = loadedMeds.find(m => m.id === medId);
+              if (med) {
+                med.taken[day] = true;
+              }
+            });
+          }
+        });
+      }
+
+      setMedications(loadedMeds);
+    } catch (error) {
+      console.error('Failed to load calendar data:', error);
+    }
+  };
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -57,34 +81,63 @@ const CalendarPage = ({ userData }) => {
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const toggleMedicationTaken = (medId, day) => {
+  const toggleMedicationTaken = async (medId, day) => {
+    // Find current state
+    const med = medications.find(m => m.id === medId);
+    const wasTaken = med?.taken[day] || false;
+    
+    // Optimistic UI update
     setMedications(prev =>
-      prev.map(med =>
-        med.id === medId
+      prev.map(m =>
+        m.id === medId
           ? {
-              ...med,
+              ...m,
               taken: {
-                ...med.taken,
-                [day]: !med.taken[day],
+                ...m.taken,
+                [day]: !wasTaken,
               },
             }
-          : med
+          : m
       )
     );
+
+    try {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      // Format as YYYY-MM-DD
+      const dateStr = date.toISOString().split('T')[0];
+      
+      // Backend expects: { user_id, medication_id, date, taken, time_taken }
+      await medicationAPI.track({
+        user_id: userId,
+        medication_id: medId,
+        date: dateStr,
+        taken: !wasTaken,
+        time_taken: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error tracking medication:', error);
+      loadData(); // Revert on error
+    }
   };
 
-  const addMedication = () => {
+  const addMedication = async () => {
     if (newMedication.name && newMedication.dosage && newMedication.time) {
-      setMedications([
-        ...medications,
-        {
-          id: Date.now(),
-          ...newMedication,
-          taken: {},
-        },
-      ]);
-      setNewMedication({ name: '', dosage: '', time: '', frequency: 'Daily' });
-      setShowAddModal(false);
+      try {
+        // Backend expects: { user_id, name, dosage, time, frequency }
+        await medicationAPI.create({
+          user_id: userId,
+          name: newMedication.name,
+          dosage: newMedication.dosage,
+          time: newMedication.time,
+          frequency: newMedication.frequency
+        });
+        
+        setNewMedication({ name: '', dosage: '', time: '', frequency: 'Daily' });
+        setShowAddModal(false);
+        loadData(); // Refresh list
+      } catch (error) {
+        console.error('Error adding medication:', error);
+      }
     }
   };
 
@@ -182,6 +235,11 @@ const CalendarPage = ({ userData }) => {
                     </div>
                   </div>
                 ))}
+                {getTodaysMedications().length === 0 && (
+                  <p className="text-charcoal/50 text-sm text-center py-4">
+                    No medications scheduled for today
+                  </p>
+                )}
               </div>
             </div>
 
@@ -196,6 +254,11 @@ const CalendarPage = ({ userData }) => {
                     <p className="text-xs text-charcoal/50 mt-1">{med.frequency}</p>
                   </div>
                 ))}
+                {medications.length === 0 && (
+                  <p className="text-charcoal/50 text-sm text-center py-4">
+                    No medications added yet
+                  </p>
+                )}
               </div>
             </div>
           </div>
