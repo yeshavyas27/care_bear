@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import bearIcon from '../../assets/bear.png';
 
-// CareBear Homepage
+// MediPal Homepage
 const HomePage = ({ userData, medications, updateMedications }) => {
   const navigate = useNavigate();
   const [language, setLanguage] = useState('en-US');
@@ -230,9 +230,9 @@ const HomePage = ({ userData, medications, updateMedications }) => {
       <div className="bg-white border-b-2 border-charcoal/10 px-6 py-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={bearIcon} alt="CareBear" className="w-12 h-12 rounded-full flex-shrink-0 object-contain" />
+            <img src={bearIcon} alt="MediPal" className="w-12 h-12 rounded-full flex-shrink-0 object-contain" />
             <div>
-              <h1 className="text-3xl font-bold text-charcoal">CareBear</h1>
+              <h1 className="text-3xl font-bold text-charcoal">MediPal</h1>
             </div>
           </div>
           <div className="flex gap-2 items-center">
