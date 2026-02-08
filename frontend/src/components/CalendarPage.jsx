@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 const CalendarPage = ({ userData }) => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date().getDate());
   const [medications, setMedications] = useState([
     {
       id: 1,
@@ -89,10 +90,9 @@ const CalendarPage = ({ userData }) => {
   };
 
   const getTodaysMedications = () => {
-    const today = new Date().getDate();
     return medications.map(med => ({
       ...med,
-      isTaken: med.taken[today] || false,
+      isTaken: med.taken[selectedDate] || false,
     }));
   };
 
@@ -103,6 +103,10 @@ const CalendarPage = ({ userData }) => {
   const nextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1));
   };
+
+  const isSelectedDateToday = selectedDate === new Date().getDate() &&
+    currentDate.getMonth() === new Date().getMonth() &&
+    currentDate.getFullYear() === new Date().getFullYear();
 
   return (
     <div className="min-h-screen bg-cream">
@@ -143,7 +147,7 @@ const CalendarPage = ({ userData }) => {
                   <circle cx="12" cy="12" r="10"/>
                   <polyline points="12 6 12 12 16 14"/>
                 </svg>
-                Today's Schedule
+                {isSelectedDateToday ? "Today's Schedule" : `Schedule for ${monthNames[currentDate.getMonth()]} ${selectedDate}`}
               </h2>
               <div className="space-y-3">
                 {getTodaysMedications().map((med) => (
@@ -154,7 +158,7 @@ const CalendarPage = ({ userData }) => {
                         ? 'bg-brown/10 border-brown'
                         : 'bg-cream/50 border-charcoal/10 hover:border-brown/50'
                     }`}
-                    onClick={() => toggleMedicationTaken(med.id, new Date().getDate())}
+                    onClick={() => toggleMedicationTaken(med.id, selectedDate)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
@@ -255,6 +259,8 @@ const CalendarPage = ({ userData }) => {
                     currentDate.getMonth() === new Date().getMonth() &&
                     currentDate.getFullYear() === new Date().getFullYear();
                   
+                  const isSelected = day === selectedDate;
+                  
                   const completedCount = medications.filter(med => med.taken[day]).length;
                   const totalCount = medications.length;
                   const allCompleted = completedCount === totalCount && totalCount > 0;
@@ -263,8 +269,11 @@ const CalendarPage = ({ userData }) => {
                   return (
                     <div
                       key={day}
-                      className={`aspect-square p-2 rounded-xl border-2 transition-all ${
-                        isToday
+                      onClick={() => setSelectedDate(day)}
+                      className={`aspect-square p-2 rounded-xl border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-brown bg-brown/20 ring-2 ring-brown/50'
+                          : isToday
                           ? 'border-brown bg-brown/10'
                           : allCompleted
                           ? 'border-brown/30 bg-brown/5'
@@ -275,7 +284,7 @@ const CalendarPage = ({ userData }) => {
                     >
                       <div className="h-full flex flex-col">
                         <span className={`text-sm font-semibold ${
-                          isToday ? 'text-brown' : 'text-charcoal'
+                          isSelected ? 'text-brown' : isToday ? 'text-brown' : 'text-charcoal'
                         }`}>
                           {day}
                         </span>
