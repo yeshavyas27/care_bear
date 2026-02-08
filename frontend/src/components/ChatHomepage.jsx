@@ -2,11 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import bearIcon from '../../assets/bear.png';
 
-const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
+const ChatHomepage = ({ userData, chatHistory = [], updateChatHistory = () => {} }) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  
+  // ---Voice State ---
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -17,9 +22,38 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
     scrollToBottom();
   }, [messages]);
 
+  // ---Initialize Speech Recognition ---
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false; // Capture one sentence at a time
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onstart = () => setIsListening(true);
+      recognitionRef.current.onend = () => setIsListening(false);
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        // Logic: Append voice text to existing input
+        setInputMessage((prev) => (prev ? prev + ' ' + transcript : transcript));
+      };
+    }
+  }, []);
+
+  // --- NEW: Toggle Microphone ---
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
+
   useEffect(() => {
     // Initialize with welcome message if no chat history
-    if (chatHistory.length === 0) {
+    if (!Array.isArray(chatHistory) || chatHistory.length === 0) {
       const welcomeMessage = {
         id: Date.now(),
         sender: 'bear',
@@ -53,11 +87,14 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
+    // 1. Create User Message Object
     const userMessage = {
       id: Date.now(),
       sender: 'user',
       text: inputMessage,
       timestamp: new Date().toISOString(),
+      // Optional: Add a flag if you want to track this came from voice input specifically
+      // isVoiceTranscript: true 
     };
 
     const newMessages = [...messages, userMessage];
@@ -65,7 +102,7 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI response delay
+    // 2. Simulate AI Response
     setTimeout(() => {
       const bearResponse = {
         id: Date.now() + 1,
@@ -76,6 +113,8 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
 
       const updatedMessages = [...newMessages, bearResponse];
       setMessages(updatedMessages);
+      
+      // 3. Save Transcript/History for Database/AI
       updateChatHistory(updatedMessages);
       setIsTyping(false);
     }, 1000 + Math.random() * 1000);
@@ -103,13 +142,25 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </button>
-            <img src={bearIcon} alt="Care Bear" className="w-16 h-16 rounded-full object-contain" />
+            <img src={bearIcon} alt="CareBear" className="w-12 h-12 rounded-full flex-shrink-0 object-contain" />
             <div>
               <h1 className="text-xl font-bold text-charcoal">Care Bear</h1>
               <p className="text-xs text-charcoal/60">Always here for you</p>
             </div>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/calendar')}
+              className="p-3 hover:bg-cream rounded-xl transition-colors"
+              title="Medication Calendar"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </button>
             <button
               onClick={() => navigate('/profile')}
               className="p-3 hover:bg-cream rounded-xl transition-colors"
@@ -134,7 +185,7 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
             >
               {message.sender === 'bear' && (
                 <div className="flex-shrink-0 mb-1">
-                  <img src={bearIcon} alt="Care Bear" className="w-14 h-14 rounded-full object-contain" />
+                  <img src={bearIcon} alt="CareBear" className="w-12 h-12 rounded-full object-contain" />
                 </div>
               )}
               <div
@@ -155,7 +206,15 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
           {isTyping && (
             <div className="flex justify-start items-end gap-3">
               <div className="flex-shrink-0 mb-1">
-                <img src={bearIcon} alt="Care Bear" className="w-10 h-10 rounded-full" />
+                <svg width="40" height="40" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="#CD853F" stroke="#654321" strokeWidth="3"/>
+                  <circle cx="30" cy="30" r="12" fill="#DAA520" stroke="#654321" strokeWidth="2"/>
+                  <circle cx="70" cy="30" r="12" fill="#DAA520" stroke="#654321" strokeWidth="2"/>
+                  <circle cx="35" cy="48" r="4" fill="#654321"/>
+                  <circle cx="65" cy="48" r="4" fill="#654321"/>
+                  <path d="M 40 60 Q 50 68 60 60" stroke="#654321" strokeWidth="3" fill="none" strokeLinecap="round"/>
+                  <ellipse cx="50" cy="55" rx="6" ry="8" fill="#DAA520"/>
+                </svg>
               </div>
               <div className="bg-white border-2 border-charcoal/10 rounded-2xl rounded-bl-sm px-6 py-4 shadow-sm">
                 <div className="flex gap-1">
@@ -174,11 +233,41 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
       {/* Input Area */}
       <div className="bg-white border-t-2 border-charcoal/10 px-4 py-4 shadow-lg">
         <div className="max-w-4xl mx-auto flex gap-3">
+          
+          {/* --- NEW: Mic Button --- */}
+          <button
+            onClick={toggleListening}
+            className={`p-3 rounded-xl transition-all ${
+              isListening 
+                ? 'bg-red-500 text-white animate-pulse' 
+                : 'bg-charcoal/5 hover:bg-charcoal/10 text-charcoal'
+            }`}
+            title="Speak"
+          >
+            {isListening ? (
+               // Mic Off / Active Icon
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                 <line x1="12" y1="19" x2="12" y2="23"/>
+                 <line x1="8" y1="23" x2="16" y2="23"/>
+               </svg>
+            ) : (
+               // Mic Icon
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                 <line x1="12" y1="19" x2="12" y2="23"/>
+                 <line x1="8" y1="23" x2="16" y2="23"/>
+               </svg>
+            )}
+          </button>
+
           <textarea
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Type your message..."
+            placeholder={isListening ? "Listening..." : "Type your message..."}
             className="flex-1 px-4 py-3 border-2 border-charcoal/20 rounded-xl focus:border-brown focus:outline-none resize-none transition-colors"
             rows="1"
             style={{ minHeight: '48px', maxHeight: '120px' }}
