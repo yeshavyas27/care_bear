@@ -142,9 +142,9 @@ const ChatHomepage = ({ userData, chatHistory = [], updateChatHistory = () => {}
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </button>
-            <img src={bearIcon} alt="CareBear" className="w-20 h-20 rounded-full flex-shrink-0 object-contain" />
+            <img src={bearIcon} alt="MediPal" className="w-20 h-20 rounded-full flex-shrink-0 object-contain" />
             <div>
-              <h1 className="text-xl font-bold text-charcoal">Care Bear</h1>
+              <h1 className="text-xl font-bold text-charcoal">MediPal</h1>
               <p className="text-xs text-charcoal/60">Always here for you</p>
             </div>
           </div>
@@ -185,7 +185,7 @@ const ChatHomepage = ({ userData, chatHistory = [], updateChatHistory = () => {}
             >
               {message.sender === 'bear' && (
                 <div className="flex-shrink-0 mb-1">
-                  <img src={bearIcon} alt="CareBear" className="w-20 h-20 rounded-full object-contain" />
+                  <img src={bearIcon} alt="MediPal" className="w-20 h-20 rounded-full object-contain" />
                 </div>
               )}
               <div
@@ -206,7 +206,7 @@ const ChatHomepage = ({ userData, chatHistory = [], updateChatHistory = () => {}
           {isTyping && (
             <div className="flex justify-start items-end gap-3">
               <div className="flex-shrink-0 mb-1">
-                <img src={bearIcon} alt="CareBear" className="w-20 h-20 rounded-full object-contain" />
+                <img src={bearIcon} alt="MediPal" className="w-20 h-20 rounded-full object-contain" />
               </div>
               <div className="bg-white border-2 border-charcoal/10 rounded-2xl rounded-bl-sm px-6 py-4 shadow-sm">
                 <div className="flex gap-1">

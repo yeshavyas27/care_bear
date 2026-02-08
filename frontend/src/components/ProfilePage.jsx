@@ -13,7 +13,7 @@ const ProfilePage = ({ userData, updateUserData, chatHistory }) => {
 
   const generateReport = () => {
     const reportContent = `
-CARE BEAR HEALTH REPORT
+MEDIPAL HEALTH REPORT
 Generated: ${new Date().toLocaleString()}
 
 ========================================
@@ -62,10 +62,10 @@ Relationship: ${userData.emergencyContact.relationship}
 Phone: ${userData.emergencyContact.phone}
 
 ========================================
-RECENT CARE BEAR INTERACTIONS
+RECENT MEDIPAL INTERACTIONS
 ========================================
 ${chatHistory.slice(-10).map((msg, idx) => 
-  `${idx + 1}. [${new Date(msg.timestamp).toLocaleString()}] ${msg.sender === 'user' ? 'Patient' : 'Care Bear'}: ${msg.text}`
+  `${idx + 1}. [${new Date(msg.timestamp).toLocaleString()}] ${msg.sender === 'user' ? 'Patient' : 'MediPal'}: ${msg.text}`
 ).join('\n')}
 
 ========================================
@@ -80,7 +80,7 @@ Please share this with your healthcare provider.
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `CareBear_HealthReport_${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `MediPal_HealthReport_${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

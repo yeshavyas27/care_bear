@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import bearIcon from '../../assets/bear.png';
 
-// CareBear Homepage
+// MediPal Homepage
 const HomePage = ({ userData, medications, updateMedications }) => {
   const navigate = useNavigate();
   const [language, setLanguage] = useState('en-US');
@@ -230,9 +230,9 @@ const HomePage = ({ userData, medications, updateMedications }) => {
       <div className="bg-white border-b-2 border-charcoal/10 px-6 py-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-0">
-            <img src={bearIcon} alt="CareBear" className="w-32 h-32 rounded-full flex-shrink-0 object-contain" />
+            <img src={bearIcon} alt="MediPal" className="w-32 h-32 rounded-full flex-shrink-0 object-contain" />
             <div className="-ml-2">
-              <h1 className="text-3xl font-bold text-charcoal">CareBear</h1>
+              <h1 className="text-3xl font-bold text-charcoal">MediPal</h1>
             </div>
           </div>
           <div className="flex gap-2 items-center">
@@ -277,7 +277,7 @@ const HomePage = ({ userData, medications, updateMedications }) => {
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
         {/* Welcome Section with Bear */}
         <div className="flex flex-col items-center gap-0 mb-6">
-          <img src={bearIcon} alt="Care Bear" className="w-96 h-96 object-contain" style={{ mixBlendMode: 'darken' }} />
+          <img src={bearIcon} alt="MediPal" className="w-96 h-96 object-contain" style={{ mixBlendMode: 'darken' }} />
           <h2 className="text-6xl font-bold text-charcoal -mt-4">
             Hello, {userData?.personalInfo?.firstName || 'Friend'}!
           </h2>
@@ -594,9 +594,9 @@ const HomePage = ({ userData, medications, updateMedications }) => {
         <button
           onClick={handleChatNavigation}
           className="w-16 h-16 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-200 flex items-center justify-center group relative overflow-hidden animate-bounce"
-          title="Chat with Care Bear"
+          title="Chat with MediPal"
         >
-          <img src={bearIcon} alt="Care Bear" className="w-16 h-16 object-cover rounded-full" />
+          <img src={bearIcon} alt="MediPal" className="w-16 h-16 object-cover rounded-full" />
         </button>
       </div>
     </div>

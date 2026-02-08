@@ -39,9 +39,9 @@ function App() {
 
   useEffect(() => {
     // Check if user has completed onboarding
-    const storedUserData = localStorage.getItem('careBearUserData');
-    const storedChatHistory = localStorage.getItem('careBearChatHistory');
-    const storedMedications = localStorage.getItem('careBearMedications');
+    const storedUserData = localStorage.getItem('mediPalUserData');
+    const storedChatHistory = localStorage.getItem('mediPalChatHistory');
+    const storedMedications = localStorage.getItem('mediPalMedications');
     
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData));
@@ -60,22 +60,22 @@ function App() {
   const handleOnboardingComplete = (data) => {
     setUserData(data);
     setIsOnboarded(true);
-    localStorage.setItem('careBearUserData', JSON.stringify(data));
+    localStorage.setItem('mediPalUserData', JSON.stringify(data));
   };
 
   const updateChatHistory = (newHistory) => {
     setChatHistory(newHistory);
-    localStorage.setItem('careBearChatHistory', JSON.stringify(newHistory));
+    localStorage.setItem('mediPalChatHistory', JSON.stringify(newHistory));
   };
 
   const updateUserData = (newData) => {
     setUserData(newData);
-    localStorage.setItem('careBearUserData', JSON.stringify(newData));
+    localStorage.setItem('mediPalUserData', JSON.stringify(newData));
   };
 
   const updateMedications = (newMedications) => {
     setMedications(newMedications);
-    localStorage.setItem('careBearMedications', JSON.stringify(newMedications));
+    localStorage.setItem('mediPalMedications', JSON.stringify(newMedications));
   };
 
   return (

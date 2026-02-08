@@ -434,10 +434,10 @@ const OnboardingFlow = ({ onComplete }) => {
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-block mb-0">
-            <img src={bearIcon} alt="Care Bear" className="w-80 h-80 rounded-full object-contain drop-shadow-lg" />
+            <img src={bearIcon} alt="MediPal" className="w-20 h-20 rounded-full object-contain drop-shadow-lg" />
           </div>
           <h1 className="text-4xl font-bold text-charcoal mb-3 -mt-4">
-            Welcome to Care Bear
+            Welcome to MediPal
           </h1>
           <p className="text-charcoal/70 text-lg">
             Let's get to know you better so I can take care of you

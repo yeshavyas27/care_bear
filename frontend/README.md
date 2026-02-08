@@ -1,19 +1,19 @@
-# Care Bear - AI-Powered Health Caretaker
+# MediPal - AI-Powered Health Caretaker
 
-Care Bear is a comprehensive health management application that helps users track their medications, monitor symptoms, and maintain their health records. Built with React, Tailwind CSS, and following modern web development best practices.
+MediPal is a comprehensive health management application that helps users track their medications, monitor symptoms, and maintain their health records. Built with React, Tailwind CSS, and following modern web development best practices.
 
 ## Features
 
 ### 🎯 Core Features
 - **Comprehensive Onboarding Flow**: Collect detailed personal information, medical history, current health status, family history, and emergency contacts
-- **AI Chat Interface**: Interactive chat with Care Bear for health-related questions and support
+- **AI Chat Interface**: Interactive chat with MediPal for health-related questions and support
 - **Medication Calendar**: Visual calendar to track daily medications with completion status
 - **Profile Management**: View and edit personal health information
 - **Health Reports**: Generate downloadable reports for doctor visits
 
 ### 🎨 Design
 - **Color Scheme**: Black, white, brown accents, and pale yellow background
-- **Custom Bear Logo**: Friendly brown bear mascot throughout the application
+- **Custom Bear Logo**: Friendly brown bear mascot (MediPal) throughout the application
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
 - **Smooth Animations**: Polished transitions and micro-interactions
 
@@ -86,7 +86,7 @@ care-bear-app/
 
 ### ChatHomepage
 - Real-time chat interface
-- Care Bear avatar
+- MediPal avatar
 - Message history
 - Navigation to profile and calendar
 - Simulated AI responses (ready for API integration)
