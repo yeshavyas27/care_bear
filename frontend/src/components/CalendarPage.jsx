@@ -1,43 +1,29 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const CalendarPage = ({ userData }) => {
+const CalendarPage = ({ userData, medications, updateMedications }) => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date().getDate());
-  const [medications, setMedications] = useState([
-    {
-      id: 1,
-      name: 'Morning Vitamins',
-      dosage: '1 tablet',
-      time: '08:00',
-      frequency: 'Daily',
-      taken: {},
-    },
-    {
-      id: 2,
-      name: 'Blood Pressure Medication',
-      dosage: '10mg',
-      time: '09:00',
-      frequency: 'Daily',
-      taken: {},
-    },
-    {
-      id: 3,
-      name: 'Allergy Medication',
-      dosage: '5mg',
-      time: '20:00',
-      frequency: 'As needed',
-      taken: {},
-    },
-  ]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [symptoms, setSymptoms] = useState(() => JSON.parse(localStorage.getItem('cb_symptoms') || '[]'));
   const [newMedication, setNewMedication] = useState({
     name: '',
     dosage: '',
     time: '',
     frequency: 'Daily',
   });
+
+  const getSymptomsByDate = (day) => {
+    return symptoms.filter(symptom => {
+      const symptomDate = new Date(symptom.timestamp);
+      return (
+        symptomDate.getDate() === day &&
+        symptomDate.getMonth() === currentDate.getMonth() &&
+        symptomDate.getFullYear() === currentDate.getFullYear()
+      );
+    });
+  };
 
   const daysInMonth = new Date(
     currentDate.getFullYear(),
@@ -59,8 +45,8 @@ const CalendarPage = ({ userData }) => {
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const toggleMedicationTaken = (medId, day) => {
-    setMedications(prev =>
-      prev.map(med =>
+    updateMedications(
+      medications.map(med =>
         med.id === medId
           ? {
               ...med,
@@ -76,7 +62,7 @@ const CalendarPage = ({ userData }) => {
 
   const addMedication = () => {
     if (newMedication.name && newMedication.dosage && newMedication.time) {
-      setMedications([
+      updateMedications([
         ...medications,
         {
           id: Date.now(),
@@ -187,6 +173,25 @@ const CalendarPage = ({ userData }) => {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Symptoms for Selected Date */}
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-charcoal/10 p-6 mt-6">
+              <h2 className="text-lg font-bold text-charcoal mb-4">Symptoms</h2>
+              {getSymptomsByDate(selectedDate).length > 0 ? (
+                <ul className="space-y-2">
+                  {getSymptomsByDate(selectedDate).map((symptom) => (
+                    <li key={symptom.id} className="p-3 bg-cream/50 rounded-lg">
+                      <p className="text-sm text-charcoal">{symptom.text}</p>
+                      <p className="text-xs text-charcoal/60 mt-1">
+                        {new Date(symptom.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-charcoal/60">No symptoms recorded for this day</p>
+              )}
             </div>
 
             {/* All Medications List */}

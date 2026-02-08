@@ -10,11 +10,38 @@ function App() {
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [userData, setUserData] = useState(null);
   const [chatHistory, setChatHistory] = useState([]);
+  const [medications, setMedications] = useState([
+    {
+      id: 1,
+      name: 'Morning Vitamins',
+      dosage: '1 tablet',
+      time: '08:00',
+      frequency: 'Daily',
+      taken: {},
+    },
+    {
+      id: 2,
+      name: 'Blood Pressure Medication',
+      dosage: '10mg',
+      time: '09:00',
+      frequency: 'Daily',
+      taken: {},
+    },
+    {
+      id: 3,
+      name: 'Allergy Medication',
+      dosage: '5mg',
+      time: '20:00',
+      frequency: 'As needed',
+      taken: {},
+    },
+  ]);
 
   useEffect(() => {
     // Check if user has completed onboarding
     const storedUserData = localStorage.getItem('careBearUserData');
     const storedChatHistory = localStorage.getItem('careBearChatHistory');
+    const storedMedications = localStorage.getItem('careBearMedications');
     
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData));
@@ -23,6 +50,10 @@ function App() {
     
     if (storedChatHistory) {
       setChatHistory(JSON.parse(storedChatHistory));
+    }
+    
+    if (storedMedications) {
+      setMedications(JSON.parse(storedMedications));
     }
   }, []);
 
@@ -40,6 +71,11 @@ function App() {
   const updateUserData = (newData) => {
     setUserData(newData);
     localStorage.setItem('careBearUserData', JSON.stringify(newData));
+  };
+
+  const updateMedications = (newMedications) => {
+    setMedications(newMedications);
+    localStorage.setItem('careBearMedications', JSON.stringify(newMedications));
   };
 
   return (
@@ -62,6 +98,8 @@ function App() {
               isOnboarded ? (
                 <HomePage 
                   userData={userData}
+                  medications={medications}
+                  updateMedications={updateMedications}
                 />
               ) : (
                 <Navigate to="/onboarding" replace />
@@ -100,7 +138,11 @@ function App() {
             path="/calendar" 
             element={
               isOnboarded ? (
-                <CalendarPage userData={userData} />
+                <CalendarPage 
+                  userData={userData}
+                  medications={medications}
+                  updateMedications={updateMedications}
+                />
               ) : (
                 <Navigate to="/onboarding" replace />
               )
