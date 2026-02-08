@@ -1,49 +1,109 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { userAPI, healthAPI } from '../services/api';
 
 const ProfilePage = ({ userData, updateUserData, chatHistory }) => {
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(userData);
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
-    updateUserData(editedData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      setError('');
+      const userId = localStorage.getItem('userId');
+      
+      // Map frontend structure to backend expected structure
+      const apiData = {
+        personal_info: {
+          first_name: editedData.personalInfo.firstName,
+          last_name: editedData.personalInfo.lastName,
+          date_of_birth: editedData.personalInfo.dateOfBirth,
+          gender: editedData.personalInfo.gender,
+          email: editedData.personalInfo.email,
+          phone: editedData.personalInfo.phone,
+        },
+        medical_history: {
+          allergies: editedData.medicalHistory.allergies,
+          chronic_conditions: editedData.medicalHistory.chronicConditions,
+          past_surgeries: editedData.medicalHistory.pastSurgeries,
+          current_medications: editedData.medicalHistory.currentMedications,
+        },
+        health_status: {
+          current_conditions: editedData.healthStatus.currentConditions,
+          symptoms: editedData.healthStatus.symptoms,
+          is_pregnant: editedData.healthStatus.isPregnant,
+          due_date: editedData.healthStatus.dueDate,
+        },
+        family_history: {
+          heart_disease: editedData.familyHistory.heartDisease,
+          diabetes: editedData.familyHistory.diabetes,
+          cancer: editedData.familyHistory.cancer,
+          mental_health: editedData.familyHistory.mentalHealth,
+          other: editedData.familyHistory.other,
+        },
+        emergency_contact: {
+          name: editedData.emergencyContact.name,
+          relationship: editedData.emergencyContact.relationship,
+          phone: editedData.emergencyContact.phone,
+        },
+      };
+      
+      await userAPI.update(userId, apiData);
+      updateUserData(editedData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      setError(error.response?.data?.detail || 'Failed to save changes. Please try again.');
+    }
   };
 
-  const generateReport = () => {
-    const reportContent = `
+  const generateReport = async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      
+      // Get current date for end_date
+      const today = new Date();
+      const endDate = today.toISOString().split('T')[0];
+      
+      // Get date 30 days ago for start_date
+      const startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - 30);
+      const startDateStr = startDate.toISOString().split('T')[0];
+      
+      // Trigger report generation on backend
+      // Backend expects: { user_id, start_date, end_date }
+      const response = await healthAPI.generateReport(userId, startDateStr, endDate);
+      const reportData = response.data;
+      
+      // Build report content from backend response
+      const reportContent = `
 CARE BEAR HEALTH REPORT
 Generated: ${new Date().toLocaleString()}
 
 ========================================
 PATIENT INFORMATION
 ========================================
-Name: ${userData.personalInfo.firstName} ${userData.personalInfo.lastName}
-Date of Birth: ${userData.personalInfo.dateOfBirth}
-Gender: ${userData.personalInfo.gender}
-Email: ${userData.personalInfo.email}
-Phone: ${userData.personalInfo.phone}
+Name: ${reportData.user_info?.personal_info?.first_name || userData.personalInfo.firstName} ${reportData.user_info?.personal_info?.last_name || userData.personalInfo.lastName}
+Date of Birth: ${reportData.user_info?.personal_info?.date_of_birth || userData.personalInfo.dateOfBirth}
+Gender: ${reportData.user_info?.personal_info?.gender || userData.personalInfo.gender}
+Email: ${reportData.user_info?.personal_info?.email || userData.personalInfo.email}
+Phone: ${reportData.user_info?.personal_info?.phone || userData.personalInfo.phone}
 
 ========================================
 MEDICAL HISTORY
 ========================================
-Known Allergies: ${userData.medicalHistory.allergies || 'None reported'}
-
-Chronic Conditions: ${userData.medicalHistory.chronicConditions || 'None reported'}
-
-Past Surgeries: ${userData.medicalHistory.pastSurgeries || 'None reported'}
-
-Current Medications: ${userData.medicalHistory.currentMedications || 'None reported'}
+Known Allergies: ${reportData.user_info?.medical_history?.allergies || userData.medicalHistory.allergies || 'None reported'}
+Chronic Conditions: ${reportData.user_info?.medical_history?.chronic_conditions || userData.medicalHistory.chronicConditions || 'None reported'}
+Past Surgeries: ${reportData.user_info?.medical_history?.past_surgeries || userData.medicalHistory.pastSurgeries || 'None reported'}
+Current Medications: ${reportData.user_info?.medical_history?.current_medications || userData.medicalHistory.currentMedications || 'None reported'}
 
 ========================================
 CURRENT HEALTH STATUS
 ========================================
-Current Conditions: ${userData.healthStatus.currentConditions || 'None reported'}
-
-Current Symptoms: ${userData.healthStatus.symptoms || 'None reported'}
-
-Pregnancy Status: ${userData.healthStatus.isPregnant === 'yes' ? `Yes (Due: ${userData.healthStatus.dueDate})` : userData.healthStatus.isPregnant === 'no' ? 'No' : 'N/A'}
+Current Conditions: ${reportData.user_info?.health_status?.current_conditions || userData.healthStatus.currentConditions || 'None reported'}
+Current Symptoms: ${reportData.user_info?.health_status?.symptoms || userData.healthStatus.symptoms || 'None reported'}
+${reportData.user_info?.health_status?.is_pregnant === 'yes' ? `Pregnancy Status: Yes\nDue Date: ${reportData.user_info.health_status.due_date || 'Not specified'}` : ''}
 
 ========================================
 FAMILY MEDICAL HISTORY
@@ -62,11 +122,42 @@ Relationship: ${userData.emergencyContact.relationship}
 Phone: ${userData.emergencyContact.phone}
 
 ========================================
-RECENT CARE BEAR INTERACTIONS
+CURRENT MEDICATIONS
 ========================================
-${chatHistory.slice(-10).map((msg, idx) => 
-  `${idx + 1}. [${new Date(msg.timestamp).toLocaleString()}] ${msg.sender === 'user' ? 'Patient' : 'Care Bear'}: ${msg.text}`
-).join('\n')}
+${reportData.medications && reportData.medications.length > 0 
+  ? reportData.medications.map((med, idx) => 
+      `${idx + 1}. ${med.name} - ${med.dosage} at ${med.time} (${med.frequency})`
+    ).join('\n')
+  : 'No active medications'}
+
+========================================
+RECENT MOOD TRACKING (Last 30 Days)
+========================================
+${reportData.recent_moods && reportData.recent_moods.length > 0
+  ? reportData.recent_moods.slice(0, 10).map((mood, idx) => 
+      `${idx + 1}. [${new Date(mood.date).toLocaleDateString()}] Mood: ${mood.mood}${mood.notes ? ' - ' + mood.notes : ''}`
+    ).join('\n')
+  : 'No mood entries recorded'}
+
+========================================
+ACTIVE HEALTH CONDITIONS
+========================================
+${reportData.active_conditions && reportData.active_conditions.length > 0
+  ? reportData.active_conditions.map((cond, idx) => 
+      `${idx + 1}. ${cond.condition_name} (Recorded: ${new Date(cond.recorded_date).toLocaleDateString()})${cond.notes ? '\n   Notes: ' + cond.notes : ''}`
+    ).join('\n')
+  : 'No active health conditions'}
+
+========================================
+CHAT INTERACTION SUMMARY
+========================================
+${reportData.chat_summary ? `
+Total Conversations: ${reportData.chat_summary.total_conversations || 0}
+Date Range: ${reportData.chat_summary.date_range || 'N/A'}
+Recent Topics Discussed: ${reportData.chat_summary.recent_topics && reportData.chat_summary.recent_topics.length > 0 
+  ? reportData.chat_summary.recent_topics.join(', ') 
+  : 'No specific topics identified'}
+` : 'No chat history available'}
 
 ========================================
 END OF REPORT
@@ -76,15 +167,20 @@ This report has been generated for medical consultation purposes.
 Please share this with your healthcare provider.
     `;
 
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `CareBear_HealthReport_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([reportContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `CareBear_HealthReport_${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+      alert(error.response?.data?.detail || 'Could not generate report. Please try again later.');
+    }
   };
 
   return (
@@ -123,6 +219,7 @@ Please share this with your healthcare provider.
                   onClick={() => {
                     setEditedData(userData);
                     setIsEditing(false);
+                    setError('');
                   }}
                   className="px-4 py-2 border-2 border-charcoal/30 text-charcoal/70 rounded-xl font-medium hover:bg-charcoal/10 transition-all text-sm"
                 >
@@ -139,6 +236,15 @@ Please share this with your healthcare provider.
           </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="max-w-4xl mx-auto px-6 pt-6">
+          <div className="p-4 bg-red-100 border-2 border-red-400 text-red-700 rounded-xl">
+            {error}
+          </div>
+        </div>
+      )}
 
       {/* Profile Content */}
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { chatAPI } from '../services/api';
 import bearIcon from '../../assets/bear.png';
 
 const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
@@ -18,41 +19,51 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
   }, [messages]);
 
   useEffect(() => {
-    // Initialize with welcome message if no chat history
-    if (chatHistory.length === 0) {
-      const welcomeMessage = {
-        id: Date.now(),
-        sender: 'bear',
-        text: `Hey ${userData?.personalInfo?.firstName || 'there'}! Is your throat still sore?`,
-        timestamp: new Date().toISOString(),
-      };
-      setMessages([welcomeMessage]);
-      updateChatHistory([welcomeMessage]);
-    } else {
-      setMessages(chatHistory);
-    }
-  }, []);
+    const loadHistory = async () => {
+      const userId = localStorage.getItem('userId');
+      if (!userId) return;
 
-  const generateBearResponse = (userMessage) => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    // Simple response logic - in production, this would integrate with an AI API
-    if (lowerMessage.includes('yes') || lowerMessage.includes('still sore') || lowerMessage.includes('hurt')) {
-      return "I'm sorry to hear that. How long has your throat been sore? Have you taken any medication for it?";
-    } else if (lowerMessage.includes('no') || lowerMessage.includes('better') || lowerMessage.includes('fine')) {
-      return "That's wonderful! I'm so glad you're feeling better. Is there anything else I can help you with today?";
-    } else if (lowerMessage.includes('medication') || lowerMessage.includes('medicine')) {
-      return "Based on your profile, I see you're currently taking some medications. Have you been taking them as prescribed? Would you like me to check your medication schedule?";
-    } else if (lowerMessage.includes('doctor') || lowerMessage.includes('appointment')) {
-      return "Would you like me to help you prepare for your doctor's appointment? I can generate a health report with your recent symptoms and medication history.";
-    } else {
-      return "I understand. Can you tell me more about how you're feeling today? I'm here to help with any health concerns you might have.";
-    }
-  };
+      try {
+        const response = await chatAPI.getHistory(userId);
+        if (response.data && response.data.messages) {
+          const history = response.data.messages.map(msg => ({
+            id: msg.message_id,
+            sender: msg.sender,
+            text: msg.message,
+            timestamp: msg.timestamp
+          }));
+          
+          if (history.length === 0) {
+            // Initial welcome from backend if empty
+            try {
+              const initResponse = await chatAPI.initialize(userId);
+              const welcome = {
+                id: initResponse.data.message_id,
+                sender: 'bear',
+                text: initResponse.data.bear_response,
+                timestamp: initResponse.data.timestamp,
+              };
+              setMessages([welcome]);
+            } catch (error) {
+              console.error('Failed to initialize chat:', error);
+            }
+          } else {
+            setMessages(history);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+        // Fallback to local history if API fails
+        if (chatHistory.length > 0) setMessages(chatHistory);
+      }
+    };
+    loadHistory();
+  }, []);
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
+    const userId = localStorage.getItem('userId');
     const userMessage = {
       id: Date.now(),
       sender: 'user',
@@ -65,20 +76,34 @@ const ChatHomepage = ({ userData, chatHistory, updateChatHistory }) => {
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
+    try {
+      // Backend expects: { user_id: string, message: string }
+      const response = await chatAPI.send(userId, inputMessage);
+      
       const bearResponse = {
-        id: Date.now() + 1,
+        id: response.data.message_id,
         sender: 'bear',
-        text: generateBearResponse(inputMessage),
-        timestamp: new Date().toISOString(),
+        text: response.data.bear_response,
+        timestamp: response.data.timestamp,
       };
 
       const updatedMessages = [...newMessages, bearResponse];
       setMessages(updatedMessages);
       updateChatHistory(updatedMessages);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Optional: Add error message to chat
+      const errorMessage = {
+        id: Date.now() + 1,
+        sender: 'bear',
+        text: 'Sorry, I had trouble processing that. Please try again.',
+        timestamp: new Date().toISOString(),
+      };
+      const updatedMessages = [...newMessages, errorMessage];
+      setMessages(updatedMessages);
+    } finally {
       setIsTyping(false);
-    }, 1000 + Math.random() * 1000);
+    }
   };
 
   const handleKeyPress = (e) => {

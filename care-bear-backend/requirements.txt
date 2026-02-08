@@ -1,0 +1,28 @@
+# FastAPI and web server
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database
+motor
+pymongo
+
+# Data validation
+pydantic
+pydantic-settings
+email-validator
+
+# CORS and middleware
+python-jose[cryptography]
+passlib[bcrypt]
+
+# Environment variables
+python-dotenv
+
+# Date and time utilities
+python-dateutil
+
+# Development tools
+pytest
+pytest-asyncio
+httpx
