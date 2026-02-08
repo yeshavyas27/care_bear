@@ -259,7 +259,7 @@ const HomePage = ({ userData, medications, updateMedications }) => {
         <div className="flex flex-col items-center gap-0 mb-6">
           <img src={bearIcon} alt="Care Bear" className="w-96 h-96 object-contain" style={{ mixBlendMode: 'darken' }} />
           <h2 className="text-6xl font-bold text-charcoal -mt-4">
-            Hello {userData?.name || 'Friend'}!
+            Hello, {userData?.personalInfo?.firstName || 'Friend'}!
           </h2>
         </div>
 
