@@ -142,7 +142,7 @@ const ChatHomepage = ({ userData, chatHistory = [], updateChatHistory = () => {}
                 <path d="M19 12H5M12 19l-7-7 7-7"/>
               </svg>
             </button>
-            <img src={bearIcon} alt="CareBear" className="w-12 h-12 rounded-full flex-shrink-0 object-contain" />
+            <img src={bearIcon} alt="CareBear" className="w-20 h-20 rounded-full flex-shrink-0 object-contain" />
             <div>
               <h1 className="text-xl font-bold text-charcoal">Care Bear</h1>
               <p className="text-xs text-charcoal/60">Always here for you</p>
@@ -185,7 +185,7 @@ const ChatHomepage = ({ userData, chatHistory = [], updateChatHistory = () => {}
             >
               {message.sender === 'bear' && (
                 <div className="flex-shrink-0 mb-1">
-                  <img src={bearIcon} alt="CareBear" className="w-12 h-12 rounded-full object-contain" />
+                  <img src={bearIcon} alt="CareBear" className="w-20 h-20 rounded-full object-contain" />
                 </div>
               )}
               <div
@@ -206,15 +206,7 @@ const ChatHomepage = ({ userData, chatHistory = [], updateChatHistory = () => {}
           {isTyping && (
             <div className="flex justify-start items-end gap-3">
               <div className="flex-shrink-0 mb-1">
-                <svg width="40" height="40" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="45" fill="#CD853F" stroke="#654321" strokeWidth="3"/>
-                  <circle cx="30" cy="30" r="12" fill="#DAA520" stroke="#654321" strokeWidth="2"/>
-                  <circle cx="70" cy="30" r="12" fill="#DAA520" stroke="#654321" strokeWidth="2"/>
-                  <circle cx="35" cy="48" r="4" fill="#654321"/>
-                  <circle cx="65" cy="48" r="4" fill="#654321"/>
-                  <path d="M 40 60 Q 50 68 60 60" stroke="#654321" strokeWidth="3" fill="none" strokeLinecap="round"/>
-                  <ellipse cx="50" cy="55" rx="6" ry="8" fill="#DAA520"/>
-                </svg>
+                <img src={bearIcon} alt="CareBear" className="w-20 h-20 rounded-full object-contain" />
               </div>
               <div className="bg-white border-2 border-charcoal/10 rounded-2xl rounded-bl-sm px-6 py-4 shadow-sm">
                 <div className="flex gap-1">

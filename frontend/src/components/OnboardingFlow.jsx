@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import bearIcon from '../../assets/bear.png';
 
 const OnboardingFlow = ({ onComplete }) => {
   const navigate = useNavigate();
@@ -432,18 +433,10 @@ const OnboardingFlow = ({ onComplete }) => {
       <div className="w-full max-w-2xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-block mb-6">
-            <svg width="80" height="80" viewBox="0 0 100 100" className="drop-shadow-lg">
-              <circle cx="50" cy="50" r="45" fill="#CD853F" stroke="#654321" strokeWidth="3"/>
-              <circle cx="30" cy="30" r="12" fill="#DAA520" stroke="#654321" strokeWidth="2"/>
-              <circle cx="70" cy="30" r="12" fill="#DAA520" stroke="#654321" strokeWidth="2"/>
-              <circle cx="35" cy="48" r="4" fill="#654321"/>
-              <circle cx="65" cy="48" r="4" fill="#654321"/>
-              <path d="M 40 60 Q 50 68 60 60" stroke="#654321" strokeWidth="3" fill="none" strokeLinecap="round"/>
-              <ellipse cx="50" cy="55" rx="6" ry="8" fill="#DAA520"/>
-            </svg>
+          <div className="inline-block mb-0">
+            <img src={bearIcon} alt="Care Bear" className="w-80 h-80 rounded-full object-contain drop-shadow-lg" />
           </div>
-          <h1 className="text-4xl font-bold text-charcoal mb-3">
+          <h1 className="text-4xl font-bold text-charcoal mb-3 -mt-4">
             Welcome to Care Bear
           </h1>
           <p className="text-charcoal/70 text-lg">

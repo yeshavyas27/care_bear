@@ -229,27 +229,47 @@ const HomePage = ({ userData, medications, updateMedications }) => {
       {/* Header */}
       <div className="bg-white border-b-2 border-charcoal/10 px-6 py-4 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={bearIcon} alt="CareBear" className="w-12 h-12 rounded-full flex-shrink-0 object-contain" />
-            <div>
+          <div className="flex items-center gap-0">
+            <img src={bearIcon} alt="CareBear" className="w-32 h-32 rounded-full flex-shrink-0 object-contain" />
+            <div className="-ml-2">
               <h1 className="text-3xl font-bold text-charcoal">CareBear</h1>
             </div>
           </div>
           <div className="flex gap-2 items-center">
             <button
               onClick={() => navigate('/calendar')}
-              className="p-3 hover:bg-cream rounded-xl transition-colors"
+              className="p-3 hover:bg-cream rounded-xl transition-colors flex flex-col items-center gap-1"
               title="Medication Calendar"
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/>
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
+              <span className="text-xs font-medium text-charcoal">Calendar</span>
             </button>
-            <button onClick={() => navigate('/chat')} className="px-4 py-2 bg-brown text-white rounded-xl font-medium text-sm">Chat</button>
-            <button onClick={() => navigate('/profile')} className="px-4 py-2 border-2 border-charcoal text-charcoal rounded-xl font-medium text-sm">Profile</button>
+            <button 
+              onClick={() => navigate('/chat')} 
+              className="p-3 hover:bg-cream rounded-xl transition-colors flex flex-col items-center gap-1"
+              title="Chat"
+            >
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span className="text-xs font-medium text-charcoal">Chat</span>
+            </button>
+            <button 
+              onClick={() => navigate('/profile')} 
+              className="p-3 hover:bg-cream rounded-xl transition-colors flex flex-col items-center gap-1"
+              title="Profile"
+            >
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              <span className="text-xs font-medium text-charcoal">Profile</span>
+            </button>
           </div>
         </div>
       </div>
@@ -342,41 +362,73 @@ const HomePage = ({ userData, medications, updateMedications }) => {
 
           <div className="bg-white rounded-2xl shadow-lg border-2 border-charcoal/10 p-6">
             <h2 className="text-lg font-bold mb-3">Follow-ups & Appointments</h2>
-            <p className="text-sm text-charcoal/70 mb-3">Track upcoming follow-ups and get voice reminders.</p>
-            <div className="flex gap-2 mb-3">
-              <input id="followTitle" placeholder="Title (e.g., Cardiology)" className="flex-1 px-3 py-2 border-2 border-charcoal/20 rounded-lg" />
-              <input id="followWhen" type="datetime-local" className="px-3 py-2 border-2 border-charcoal/20 rounded-lg" />
-              <button onClick={() => {
-                const titleEl = document.getElementById('followTitle');
-                const whenEl = document.getElementById('followWhen');
-                const title = titleEl?.value?.trim();
-                const when = whenEl?.value;
-                if (!title || !when) {
-                  alert('Please provide both a title and a date/time for the appointment.');
-                  return;
-                }
-                const item = { id: Date.now(), title, when };
-                setFollowUps((p) => [item, ...p]);
-                titleEl.value = '';
-                whenEl.value = '';
-              }} className="px-3 py-2 bg-brown text-white rounded-xl text-sm">Add</button>
-            </div>
-
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm text-charcoal/70">Upcoming appointments: {followUps.length}</div>
-              <div>
-                <button onClick={speakNextAppointment} className="px-3 py-2 border-2 border-charcoal rounded-lg text-sm mr-2">Speak Next</button>
-                {nextAppointment && (
-                  <span className="text-sm text-charcoal/60">Next: {nextAppointment.title} — {new Date(nextAppointment.when).toLocaleString()}</span>
-                )}
+            <p className="text-sm text-charcoal/70 mb-4">Track upcoming follow-ups and get voice reminders.</p>
+            
+            {/* Add Appointment Form */}
+            <div className="bg-cream rounded-xl p-4 mb-4 border-2 border-brown/10">
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-charcoal mb-1">Appointment Title</label>
+                  <input id="followTitle" placeholder="e.g., Cardiology, Blood Work..." className="w-full px-3 py-2 border-2 border-charcoal/20 rounded-lg focus:border-brown focus:outline-none transition-colors" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-charcoal mb-1">Date & Time</label>
+                  <input id="followWhen" type="datetime-local" className="w-full px-3 py-2 border-2 border-charcoal/20 rounded-lg focus:border-brown focus:outline-none transition-colors" />
+                </div>
+                <button onClick={() => {
+                  const titleEl = document.getElementById('followTitle');
+                  const whenEl = document.getElementById('followWhen');
+                  const title = titleEl?.value?.trim();
+                  const when = whenEl?.value;
+                  if (!title || !when) {
+                    alert('Please provide both a title and a date/time for the appointment.');
+                    return;
+                  }
+                  const item = { id: Date.now(), title, when };
+                  setFollowUps((p) => [item, ...p]);
+                  titleEl.value = '';
+                  whenEl.value = '';
+                }} className="w-full px-4 py-2 bg-brown text-white rounded-lg font-medium hover:bg-brown/90 transition-all">
+                  + Add Appointment
+                </button>
               </div>
             </div>
 
-            <ul className="mt-3 space-y-2">
-              {followUps.map(f => (
-                <li key={f.id} className="text-sm text-charcoal/70">{f.title} — {f.when}</li>
-              ))}
-            </ul>
+            {/* Next Appointment Alert */}
+            {nextAppointment && (
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-blue-700 font-medium">UPCOMING</p>
+                    <p className="text-sm font-bold text-charcoal mt-1">{nextAppointment.title}</p>
+                    <p className="text-xs text-charcoal/60 mt-1">{new Date(nextAppointment.when).toLocaleString()}</p>
+                  </div>
+                  <button onClick={speakNextAppointment} className="px-4 py-2 bg-blue-500 text-white rounded-lg text-xs font-medium hover:bg-blue-600 transition-all">
+                    Hear Alert
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Appointments List */}
+            <div>
+              <p className="text-xs font-medium text-charcoal/60 mb-3">Total Appointments: {followUps.length}</p>
+              {followUps.length === 0 ? (
+                <p className="text-sm text-charcoal/50 text-center py-4">No appointments scheduled yet</p>
+              ) : (
+                <ul className="space-y-2">
+                  {followUps.map(f => (
+                    <li key={f.id} className="flex items-center justify-between bg-charcoal/5 rounded-lg p-3 hover:bg-charcoal/10 transition-colors">
+                      <div>
+                        <p className="text-sm font-medium text-charcoal">{f.title}</p>
+                        <p className="text-xs text-charcoal/60">{new Date(f.when).toLocaleString()}</p>
+                      </div>
+                      <button onClick={() => setFollowUps(p => p.filter(x => x.id !== f.id))} className="text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
 
@@ -555,10 +607,8 @@ const SymptomInput = ({ onAdd }) => {
   const [val, setVal] = useState('');
   return (
     <div>
-      <div className="flex gap-2">
-        <input value={val} onChange={(e) => setVal(e.target.value)} placeholder="Describe a symptom (e.g., increased pain)" className="flex-1 px-3 py-2 border-2 border-charcoal/20 rounded-lg" />
-        <button onClick={() => { if (val.trim()) { onAdd(val.trim()); setVal(''); } }} className="px-3 py-2 bg-brown text-white rounded-xl">Add</button>
-      </div>
+      <input value={val} onChange={(e) => setVal(e.target.value)} placeholder="Describe a symptom (e.g., increased pain)" className="w-full px-3 py-2 border-2 border-charcoal/20 rounded-lg mb-2" />
+      <button onClick={() => { if (val.trim()) { onAdd(val.trim()); setVal(''); } }} className="w-full px-3 py-2 bg-brown text-white rounded-lg font-medium hover:bg-brown/90 transition-all">+ Add Symptom</button>
       <div className="text-xs text-charcoal/50 mt-2">The companion can prompt follow-ups and suggest when to contact a provider.</div>
     </div>
   );
